@@ -72,6 +72,7 @@ ml.rename(columns)
 ml.head()
 ml.plot(ml.df['n_c'], ml.df['sol'])
 
+print(ml.df.corr('pearson'))
 
 
 # Choose X and y

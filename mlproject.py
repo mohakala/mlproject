@@ -18,12 +18,19 @@ class mlproject(object):
     Uses pandas dataframes
     """
     
-    def getData(self, path):
-        df = pd.read_csv(path, delimiter=",")
+    def debug(self, value=True):
+        self.debug=value
+
+    
+    def getData(self, path, delimiter=',', header='infer'):
+        df = pd.read_csv(path, delimiter=delimiter, header=header)
         self.df = df
         
 
     def missingValues(self):       
+        """
+        Report missing values
+        """
         self.missingvalues=self.df.apply(lambda x: sum(x.isnull()),axis=0)
         return self.missingvalues
 
@@ -45,6 +52,18 @@ class mlproject(object):
         plt.show()
 
 
+    def plot_new(self, i, j, xlabel=" ", ylabel=" "):
+        plt.figure()
+        plt.plot(self.df[i], self.df[j], 'o')        
+        #plt.axis('tight')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        #plt.xlabel('neighbors')
+        #plt.legend()
+        plt.show()
+
+
+
     def addHeader(self, header):
         """
         Add header to the project
@@ -63,6 +82,7 @@ class mlproject(object):
         
         print(self.df.head())
         print(self.df.describe())
+
 
 
     def dropna(self):
@@ -104,16 +124,26 @@ class mlproject(object):
         Trains the model
         Calculates training, validation and cross-validation scores
         """
+        self.model = model
         model.fit(self.Xtrain, self.ytrain)
         self.score_train = model.score(self.Xtrain, self.ytrain)
-        self.score_val = model.score(self.Xval, self.yval)
-        self.score_cross_val = cross_val_score(model, self.Xtrain, self.ytrain, cv=5)
+        if len(self.yval) > 1:
+            self.score_val = model.score(self.Xval, self.yval)
+            self.score_cross_val = cross_val_score(model, self.Xtrain, self.ytrain, cv=5)
+        else:
+            pass
 
     
     def score_print(self):
         print('\nScore (R2 on the (reduced) training set):\t', self.score_train)
-        print('Validation score (R2):\t\t\t', self.score_val)
-        print('Cross-validation score (R2), mean:\t\t', self.score_cross_val.mean(), '+-', self.score_cross_val.std()*2, ('(95% confid. interval)'))
+        try: 
+            print('Params: ', self.model.coef_)
+            print('Intercept:', self.model.intercept_)
+        except:
+            pass
+        if len(self.yval) > 1:
+            print('Validation score (R2):\t\t\t', self.score_val)
+            print('Cross-validation score (R2), mean:\t\t', self.score_cross_val.mean(), '+-', self.score_cross_val.std()*2, ('(95% confid. interval)'))
 
 
     def set_old(self, Xtrain, ytrain, Xval, yval, Xtest, ytest):
@@ -147,12 +177,31 @@ class mlproject(object):
         """
         self.X = self.df[features].values
         self.y = self.df[target].values
+        assert ind[0] <= len(self.y), "Error: ind[0] for max index for training data must be equal or smaller than len(target)" 
+
+        if(ind[0]==len(self.y)):
+            print('Note: ind[0]=', ind[0], ', using all the data for training (no validation data)')
+
 
         self.Xtrain = self.X[:ind[0], :]
         self.ytrain = self.y[:ind[0]].reshape(-1,1)
+
         self.Xval   = self.X[ind[0]+1:ind[1], :]
         self.yval   = self.y[ind[0]+1:ind[1]].reshape(-1,1)
+
         self.Xtest  = self.X[ind[1]+1:, :]
         self.ytest  = self.y[ind[1]+1:].reshape(-1,1)
+        
+        if(self.debug):
+            print('target:', self.y)
+            print('ind, len y:', ind, len(self.y))
+            print('ytrain:', self.ytrain)
+
                     
+        
+    def predict(self, X):
+        X = np.array(X).reshape(1,-1)
+        return self.model.predict(X)
+        
+        
 
