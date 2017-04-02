@@ -70,32 +70,25 @@ ml.randomizeRows()
 columns = {'measured log(solubility:mol/L)': 'sol', 'ESOL predicted log(solubility:mol/L)': 'sol_pred'}
 ml.rename(columns)
 ml.head()
+ml.plot(ml.df['n_c'], ml.df['sol'])
 
 
 
 # Choose X and y
-y = ml.df[['sol']].values 
-features = ['n_c', 'n_dbl']
+target = 'sol'
+features= ['n_c', 'n_dbl']
+ind = [800, 1000]
+ml.set_new(target, features, ind)
 
-X = ml.df[features].values
-
-Xtrain = X[:800, :]
-ytrain = y[:800].reshape(-1,1)
-Xval   = X[801:1000, :]
-yval   = y[801:1000].reshape(-1,1)
-Xtest  = X[1001:, :]
-ytest  = y[1001:].reshape(-1,1)
-
-ml.set(Xtrain, ytrain, Xval, yval, Xtest, ytest)
-ml.plot(Xtrain[:,0], ytrain)
 
 
 from sklearn import neighbors
 weights = 'uniform'     #  'uniform' or 'distance'
-n_neighbors = 3
+n_neighbors = 6
 
 knn = neighbors.KNeighborsRegressor(n_neighbors, weights=weights)
 ml.score(knn)
+ml.score_print()
 
 
 
