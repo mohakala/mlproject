@@ -12,6 +12,7 @@ import pandas as pd
 from sklearn.model_selection import cross_val_score
 
 
+
 class mlproject(object):
     """
     Items needed to carry out basic data exploration and machine learning
@@ -35,7 +36,7 @@ class mlproject(object):
         return self.missingvalues
 
 
-    def fillMissing(self, label):
+    def fillMissingCategorical(self, label):
         """
         Fill missing values of column 'label' with average value
         """
@@ -127,6 +128,8 @@ class mlproject(object):
         self.model = model
         model.fit(self.Xtrain, self.ytrain)
         self.score_train = model.score(self.Xtrain, self.ytrain)
+
+        # If size of validation set larger than 1, assume validation to be done 
         if len(self.yval) > 1:
             self.score_val = model.score(self.Xval, self.yval)
             self.score_cross_val = cross_val_score(model, self.Xtrain, self.ytrain, cv=5)
@@ -135,15 +138,27 @@ class mlproject(object):
 
     
     def score_print(self):
-        print('\nScore (R2 on the (reduced) training set):\t', self.score_train)
+        np.set_printoptions(precision=3)
+        trainscore = np.round(self.score_train, 2)
+        print('\nScore (R2 on the (reduced) training set):\t', trainscore)
+
+        # If size of validation set larger than 1, assume validation to be done 
+        if len(self.yval) > 1:
+            valscore  = np.round(self.score_val, 2)
+            cvalscore = np.round(self.score_cross_val.mean(), 2)
+            cvalscore_std = np.round(self.score_cross_val.std()*2, 2)
+            print('-Validation score (R2):\t\t\t', valscore )
+            print('-Cross-validation score (R2), mean:\t\t', cvalscore , '+-', cvalscore_std , ('(95% confid. interval)'))
+
+
+    def print_coef(self):
+        np.set_printoptions(precision=3)
         try: 
-            print('Params: ', self.model.coef_)
-            print('Intercept:', self.model.intercept_)
+            print('.. intercept:', self.model.intercept_)
+            print('.. params: ', self.model.coef_)
+            return(self.model.intercept_, self.model.coef_)
         except:
             pass
-        if len(self.yval) > 1:
-            print('Validation score (R2):\t\t\t', self.score_val)
-            print('Cross-validation score (R2), mean:\t\t', self.score_cross_val.mean(), '+-', self.score_cross_val.std()*2, ('(95% confid. interval)'))
 
 
     def set_old(self, Xtrain, ytrain, Xval, yval, Xtest, ytest):
