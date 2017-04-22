@@ -72,30 +72,61 @@ target = 'sol'
 #features= ['n_c', 'n_dbl']
 features= ['n_o','n_n','n_c','n_cl','n_dbl','n_o_c','n_n_c','n_no_c','n_dbl_c','n_cl_c']
 
-ind = [800, 1000]
+
 ml.randomizeRows()
-ml.set_new(target, features, ind)
+
+# Version 1: give indices for train, val, test 
+ind = [800, 1000]
+#ml.set_xy(target, features, ind)
+
+
+# Version 2: use train_test_split
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = \
+    train_test_split(ml.df[features].values, ml.df[target].values, test_size=0.2)
+ml.set_xy_direct(X_train, y_train, X_test, y_test)
+
+
 
 
 from sklearn.linear_model import LinearRegression
 model = LinearRegression()
 ml.score(model)
 
-
-from sklearn import neighbors
+print('KNN')
+from sklearn.neighbors import KNeighborsRegressor
 weights = 'uniform'     #  'uniform' or 'distance'
 n_neighbors = 6
-model = neighbors.KNeighborsRegressor(n_neighbors, weights=weights)
+model = KNeighborsRegressor(n_neighbors, weights=weights)
 ml.score(model, iprint=True)
+
+from sklearn.ensemble import BaggingRegressor
+model = BaggingRegressor(KNeighborsRegressor(n_neighbors = 6), n_estimators=10, max_samples=1.0)
+ml.score(model)
 
 from sklearn.tree import DecisionTreeRegressor
 model = DecisionTreeRegressor()
-ml.score(model)
+ml.score(model, cv=5)
 
+from sklearn.ensemble import BaggingRegressor
+model = BaggingRegressor(DecisionTreeRegressor(), n_estimators=15, max_samples=1.0)
+print('cv, bagging, dec.tree:', ml.score(model, iprint=False))
+
+from sklearn.ensemble import AdaBoostRegressor
+model = AdaBoostRegressor(DecisionTreeRegressor(), n_estimators=10)
+print('cv, adaboost, dec.tree:', ml.score(model, iprint=False))
+
+print('RF:')
 from sklearn.ensemble import RandomForestRegressor
 model=RandomForestRegressor()
 ml.score(model, printTestScore=True)
 
+for i in range(50 , 500, 100):
+    model=RandomForestRegressor(n_estimators=i)
+    print('i:', i)
+    print(ml.score(model, iprint=False))
+    
+    
 print('------------')
 print('Done')
 

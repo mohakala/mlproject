@@ -111,36 +111,36 @@ class mlproject(object):
         cv: cross-validation folds
         """
         self.model = model
+        self.cv = cv
         model.fit(self.Xtrain, self.ytrain)
         self.score_train = model.score(self.Xtrain, self.ytrain)
-        self.score_cross_val = cross_val_score(model, self.Xtrain, self.ytrain)
-        self.score_test = model.score(self.Xtest, self.ytest)
+        self.score_cross_val = cross_val_score(model, self.Xtrain, self.ytrain, cv=cv)
 
-        # Calculate validation if length of set larger than 1 
-        if len(self.yval) > 1:
+        if self.isVal:
             self.score_val = model.score(self.Xval, self.yval)
-            printValScore = True
-        else:
-            printValScore = False
+            
+        if self.isTest:
+            self.score_test = model.score(self.Xtest, self.ytest)
 
         if iprint:
-            print('Sizes of train, validate, test:', self.size_sets)
-            self.score_print(printValScore, printTestScore)
+            self.score_print(printTestScore)
+        
+        return self.score_cross_val.mean()
 
     
-    def score_print(self, printValScore, printTestScore):
+    def score_print(self, printTestScore):
         np.set_printoptions(precision=3)
         trainscore = np.round(self.score_train, 2)
         print('\nTraining score (R2 on training set):\t', trainscore)
 
         cvalscore = np.round(self.score_cross_val.mean(), 2)
         cvalscore_std = np.round(self.score_cross_val.std()*2, 2)
-        print('Cross-validation score (R2), mean:\t\t', cvalscore , '+-', cvalscore_std , ('(standard dev.)'))
-        # If size of validation set larger than 1
-        if printValScore:
+        print('Cross-validation score (R2), folds=', self.cv, 'mean:\t', cvalscore , '+-', cvalscore_std , ('(standard dev.)'))
+
+        if self.isVal:
             valscore  = np.round(self.score_val, 2)
             print('Validation score (R2):\t\t\t', valscore )
-        if printTestScore:
+        if (self.isTest and printTestScore):
             print('Test score:\t', self.score_test)
             
 
@@ -155,18 +155,41 @@ class mlproject(object):
         except:
             pass
 
-    def set_old(self, Xtrain, ytrain, Xval, yval, Xtest, ytest):
+    def set_xy_direct(self, Xtrain, ytrain, Xtest=None, ytest=None, Xval=None, yval=None):
         """
         Set X and y
         """
+
+        self.size_sets = []
+
         self.Xtrain = Xtrain
-        self.Xval = Xval
-        self.Xtest = Xtest
-        self.ytrain = ytrain.values.reshape(-1,1)
-        self.yval = yval.values.reshape(-1,1)
-        self.ytest = ytest.values.reshape(-1,1)
+        self.ytrain = ytrain            
+        self.size_sets.append(len(ytrain))
+
+        if yval is None:
+            self.isVal = False
+            self.size_sets.append(0)
+        else:
+            self.isVal = True
+            self.Xval = Xval
+            self.yval = yval
+            self.size_sets.append(len(yval))
+    
+        if ytest is None:
+            self.isTest = False
+            self.size_sets.append(0)
+        else:   
+            self.isTest = True
+            self.Xtest = Xtest
+            self.ytest = ytest
+            self.size_sets.append(len(ytest))
+
+        self.size=np.sum(self.size_sets)
+        print('\nSizes of train, validate, test:', self.size_sets, 'Total data:', self.size)
+
+
         
-    def set_new(self, target, features, ind):
+    def set_xy(self, target, features, ind=None):
         """
         Set X and y, make the train, validate, test split according to ind
         Makes roughly this:
@@ -185,21 +208,49 @@ class mlproject(object):
 
         self.X = self.df[features].values
         self.y = self.df[target].values
-        assert ind[0] <= len(self.y), \
-            "Error: ind[0] for max index for training data must be equal or smaller than len(target)" 
+        self.size=len(self.y)
 
-        if(ind[0]==len(self.y)):
-            print('Note: ind[0]=', ind[0], ', using all the data for training (no validation data)')
+        if ind is None:
+            pass
+        else:
+            assert ind[0] <= len(self.y), \
+                      "Error: ind[0] for max index for training data \
+                       must be equal or smaller than len(target)" 
+            assert ind[1] <= len(self.y), \
+                      "Error: ind[1] for max index for validation data \
+                       must be equal or smaller than len(target)" 
 
+        self.size_sets = []
+        self.isVal = False
+        self.isTest = False
+        
+        if (ind is None or ind[0]==len(self.y)):
+            # Just training data
+            self.Xtrain = self.X[:len(self.y), :]
+            self.ytrain = self.y[:len(self.y)]
+            self.size_sets.append(len(self.ytrain))
+        else:
+            self.Xtrain = self.X[:ind[0], :]
+            self.ytrain = self.y[:ind[0]]
+            self.size_sets.append(len(self.ytrain))
+            if (ind[1] > ind[0]):
+                # Training, validation and test data
+                self.isVal = True
+                self.Xval   = self.X[ind[0]:ind[1], :]
+                self.yval   = self.y[ind[0]:ind[1]]
+                self.size_sets.append(len(self.yval))
+                self.isTest = True
+                self.Xtest  = self.X[ind[1]:, :]
+                self.ytest  = self.y[ind[1]:]
+                self.size_sets.append(len(self.ytest))
+            else:
+                # Training and test data
+                self.size_sets.append(0)
+                self.isTest = True
+                self.Xtest  = self.X[ind[0]:, :]
+                self.ytest  = self.y[ind[0]:]
+                self.size_sets.append(len(self.ytest))
 
-        self.Xtrain = self.X[:ind[0], :]
-        self.ytrain = self.y[:ind[0]]   
-
-        self.Xval   = self.X[ind[0]+1:ind[1], :]
-        self.yval   = self.y[ind[0]+1:ind[1]]
-
-        self.Xtest  = self.X[ind[1]+1:, :]
-        self.ytest  = self.y[ind[1]+1:]
         
         if(self.debug is True):
             print('debug = TRUE')
@@ -207,7 +258,9 @@ class mlproject(object):
             print('ind, len y:', ind, len(self.y))
             print('ytrain:', self.ytrain)
 
-        self.size_sets = (len(self.ytrain), len(self.yval), len(self.ytest))
+        print('\nSizes of train, validate, test:', self.size_sets, 'Total data:', self.size)
+        assert self.size == np.sum(self.size_sets), "Sum error in sizes of train, validate, test sets" 
+
 
                     
         
