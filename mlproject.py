@@ -19,15 +19,18 @@ class mlproject(object):
     Uses pandas dataframes
     """
     
-    def debug(self, value=True):
-        self.debug=value
-
+    def __init__(self):
+        pass
     
+    def debug(self, value=False):
+        self.debug=value
+        if self.debug:
+            print('**debug set to True**')
+
     def getData(self, path, delimiter=',', header='infer'):
         df = pd.read_csv(path, delimiter=delimiter, header=header)
         self.df = df
         
-
     def missingValues(self):       
         """
         Report missing values
@@ -35,13 +38,11 @@ class mlproject(object):
         self.missingvalues=self.df.apply(lambda x: sum(x.isnull()),axis=0)
         return self.missingvalues
 
-
     def fillMissingCategorical(self, label):
         """
         Fill missing values of column 'label' with average value
         """
         self.df[label].fillna(self.df[label].value_counts().index[0], inplace=True)
-
 
     def plot(self, x, y):
         plt.figure()
@@ -51,7 +52,6 @@ class mlproject(object):
         #plt.xlabel('neighbors')
         #plt.legend()
         plt.show()
-
 
     def plot_new(self, i, j, xlabel=" ", ylabel=" "):
         plt.figure()
@@ -63,14 +63,8 @@ class mlproject(object):
         #plt.legend()
         plt.show()
 
-
-
     def addHeader(self, header):
-        """
-        Add header to the project
-        """
         self.header=header
-
         
     def examine(self):
         """
@@ -79,23 +73,19 @@ class mlproject(object):
         try:
             print(self.header)
         except AttributeError:
-            pass
-        
+            pass        
+        print('Shape of df:', self.df.shape)
         print(self.df.head())
         print(self.df.describe())
 
-
-
     def dropna(self):
         self.df = self.df.dropna()
-        
-                
+                        
     def modifyData(self, func):
         """ 
         Modify df using function func
         """
         self.df = func(self.df)
-        
         
     def randomizeRows(self, seed=None):
         """
@@ -105,50 +95,55 @@ class mlproject(object):
         self.df=self.df.reindex(np.random.permutation(self.df.index))
         self.df=self.df.reset_index(drop=True)
 
-
-    def head(self):
-        """
-        Show a few lines of the dataframe
-        """
-        print(self.df.head())
-
+    def head(self, n=6):
+        print(self.df.head(n))
 
     def rename(self, columns):
         """
         Rename columns
         """
         self.df = self.df.rename(columns = columns)
-
             
-    def score(self, model):
+    def score(self, model, cv=5, iprint=True, printTestScore=False):
         """
         Trains the model
-        Calculates training, validation and cross-validation scores
+        Calculates training, validation, cross-validation and test scores
+        cv: cross-validation folds
         """
         self.model = model
         model.fit(self.Xtrain, self.ytrain)
         self.score_train = model.score(self.Xtrain, self.ytrain)
+        self.score_cross_val = cross_val_score(model, self.Xtrain, self.ytrain)
+        self.score_test = model.score(self.Xtest, self.ytest)
 
-        # If size of validation set larger than 1, assume validation to be done 
+        # Calculate validation if length of set larger than 1 
         if len(self.yval) > 1:
             self.score_val = model.score(self.Xval, self.yval)
-            self.score_cross_val = cross_val_score(model, self.Xtrain, self.ytrain, cv=5)
+            printValScore = True
         else:
-            pass
+            printValScore = False
+
+        if iprint:
+            print('Sizes of train, validate, test:', self.size_sets)
+            self.score_print(printValScore, printTestScore)
 
     
-    def score_print(self):
+    def score_print(self, printValScore, printTestScore):
         np.set_printoptions(precision=3)
         trainscore = np.round(self.score_train, 2)
-        print('\nScore (R2 on the (reduced) training set):\t', trainscore)
+        print('\nTraining score (R2 on training set):\t', trainscore)
 
-        # If size of validation set larger than 1, assume validation to be done 
-        if len(self.yval) > 1:
+        cvalscore = np.round(self.score_cross_val.mean(), 2)
+        cvalscore_std = np.round(self.score_cross_val.std()*2, 2)
+        print('Cross-validation score (R2), mean:\t\t', cvalscore , '+-', cvalscore_std , ('(standard dev.)'))
+        # If size of validation set larger than 1
+        if printValScore:
             valscore  = np.round(self.score_val, 2)
-            cvalscore = np.round(self.score_cross_val.mean(), 2)
-            cvalscore_std = np.round(self.score_cross_val.std()*2, 2)
-            print('-Validation score (R2):\t\t\t', valscore )
-            print('-Cross-validation score (R2), mean:\t\t', cvalscore , '+-', cvalscore_std , ('(95% confid. interval)'))
+            print('Validation score (R2):\t\t\t', valscore )
+        if printTestScore:
+            print('Test score:\t', self.score_test)
+            
+
 
 
     def print_coef(self):
@@ -160,7 +155,6 @@ class mlproject(object):
         except:
             pass
 
-
     def set_old(self, Xtrain, ytrain, Xval, yval, Xtest, ytest):
         """
         Set X and y
@@ -168,15 +162,13 @@ class mlproject(object):
         self.Xtrain = Xtrain
         self.Xval = Xval
         self.Xtest = Xtest
-        self.ytrain = ytrain
-        self.yval = yval
-        self.ytest = ytest
-
+        self.ytrain = ytrain.values.reshape(-1,1)
+        self.yval = yval.values.reshape(-1,1)
+        self.ytest = ytest.values.reshape(-1,1)
         
     def set_new(self, target, features, ind):
         """
-        Set X and y, makes the train, validate, test split
- 
+        Set X and y, make the train, validate, test split according to ind
         Makes roughly this:
        
         y = ml.df[[yname]].values 
@@ -190,27 +182,32 @@ class mlproject(object):
         ytest  = y[295:].reshape(-1,1)
 
         """
+
         self.X = self.df[features].values
         self.y = self.df[target].values
-        assert ind[0] <= len(self.y), "Error: ind[0] for max index for training data must be equal or smaller than len(target)" 
+        assert ind[0] <= len(self.y), \
+            "Error: ind[0] for max index for training data must be equal or smaller than len(target)" 
 
         if(ind[0]==len(self.y)):
             print('Note: ind[0]=', ind[0], ', using all the data for training (no validation data)')
 
 
         self.Xtrain = self.X[:ind[0], :]
-        self.ytrain = self.y[:ind[0]].reshape(-1,1)
+        self.ytrain = self.y[:ind[0]]   
 
         self.Xval   = self.X[ind[0]+1:ind[1], :]
-        self.yval   = self.y[ind[0]+1:ind[1]].reshape(-1,1)
+        self.yval   = self.y[ind[0]+1:ind[1]]
 
         self.Xtest  = self.X[ind[1]+1:, :]
-        self.ytest  = self.y[ind[1]+1:].reshape(-1,1)
+        self.ytest  = self.y[ind[1]+1:]
         
-        if(self.debug):
+        if(self.debug is True):
+            print('debug = TRUE')
             print('target:', self.y)
             print('ind, len y:', ind, len(self.y))
             print('ytrain:', self.ytrain)
+
+        self.size_sets = (len(self.ytrain), len(self.yval), len(self.ytest))
 
                     
         
