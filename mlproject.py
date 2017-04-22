@@ -104,7 +104,7 @@ class mlproject(object):
         """
         self.df = self.df.rename(columns = columns)
             
-    def score(self, model, cv=5, iprint=True, printTestScore=False):
+    def score(self, model, cv=5, iprint=1, printTestScore=False):
         """
         Trains the model
         Calculates training, validation, cross-validation and test scores
@@ -112,34 +112,35 @@ class mlproject(object):
         """
         self.model = model
         self.cv = cv
+        
         model.fit(self.Xtrain, self.ytrain)
         self.score_train = model.score(self.Xtrain, self.ytrain)
         self.score_cross_val = cross_val_score(model, self.Xtrain, self.ytrain, cv=cv)
 
         if self.isVal:
             self.score_val = model.score(self.Xval, self.yval)
-            
         if self.isTest:
             self.score_test = model.score(self.Xtest, self.ytest)
 
-        if iprint:
-            self.score_print(printTestScore)
-        
+        self.score_print(iprint, printTestScore)
         return self.score_cross_val.mean()
 
     
-    def score_print(self, printTestScore):
+    def score_print(self, iprint=1, printTestScore=False):
         np.set_printoptions(precision=3)
-        trainscore = np.round(self.score_train, 2)
-        print('\nTraining score (R2 on training set):\t', trainscore)
+        if iprint > 2:
+            trainscore = np.round(self.score_train, 3)
+            print('\nTraining score (R2 on training set):\t', trainscore)
 
-        cvalscore = np.round(self.score_cross_val.mean(), 2)
-        cvalscore_std = np.round(self.score_cross_val.std()*2, 2)
-        print('Cross-validation score (R2), folds=', self.cv, 'mean:\t', cvalscore , '+-', cvalscore_std , ('(standard dev.)'))
+        if iprint > 0:
+            cvalscore = np.round(self.score_cross_val.mean(), 3)
+            cvalscore_std = np.round(self.score_cross_val.std()*2, 3)
+            print('Cross-validation score (R2), folds=', self.cv, 'mean:\t', cvalscore , '+-', cvalscore_std , ('(standard dev.)'))
 
-        if self.isVal:
-            valscore  = np.round(self.score_val, 2)
+        if self.isVal and iprint > 1:
+            valscore  = np.round(self.score_val, 3)
             print('Validation score (R2):\t\t\t', valscore )
+
         if (self.isTest and printTestScore):
             print('Test score:\t', self.score_test)
             

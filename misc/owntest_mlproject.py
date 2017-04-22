@@ -98,7 +98,7 @@ from sklearn.neighbors import KNeighborsRegressor
 weights = 'uniform'     #  'uniform' or 'distance'
 n_neighbors = 6
 model = KNeighborsRegressor(n_neighbors, weights=weights)
-ml.score(model, iprint=True)
+ml.score(model)
 
 from sklearn.ensemble import BaggingRegressor
 model = BaggingRegressor(KNeighborsRegressor(n_neighbors = 6), n_estimators=10, max_samples=1.0)
@@ -106,15 +106,17 @@ ml.score(model)
 
 from sklearn.tree import DecisionTreeRegressor
 model = DecisionTreeRegressor()
-ml.score(model, cv=5)
+ml.score(model)
 
 from sklearn.ensemble import BaggingRegressor
 model = BaggingRegressor(DecisionTreeRegressor(), n_estimators=15, max_samples=1.0)
-print('cv, bagging, dec.tree:', ml.score(model, iprint=False))
+print('cv, bagging, dec.tree:')
+ml.score(model)
 
 from sklearn.ensemble import AdaBoostRegressor
 model = AdaBoostRegressor(DecisionTreeRegressor(), n_estimators=10)
-print('cv, adaboost, dec.tree:', ml.score(model, iprint=False))
+print('cv, adaboost, dec.tree:')
+ml.score(model, iprint=3)
 
 print('RF:')
 from sklearn.ensemble import RandomForestRegressor
@@ -123,8 +125,7 @@ ml.score(model, printTestScore=True)
 
 for i in range(50 , 500, 100):
     model=RandomForestRegressor(n_estimators=i)
-    print('i:', i)
-    print(ml.score(model, iprint=False))
+    print('i:', i, ml.score(model, iprint=0))
     
     
 print('------------')
