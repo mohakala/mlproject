@@ -62,7 +62,7 @@ ml.head(3)
 columns = {'measured log(solubility:mol/L)': 'sol', 'ESOL predicted log(solubility:mol/L)': 'sol_pred'}
 ml.rename(columns)
 # ml.head()
-ml.plot(ml.df['n_c'], ml.df['sol'])
+# ml.plot(ml.df['n_c'], ml.df['sol'])
 
 # print(ml.df.corr('pearson'))
 
@@ -86,12 +86,6 @@ X_train, X_test, y_train, y_test = \
     train_test_split(ml.df[features].values, ml.df[target].values, test_size=0.2)
 ml.set_xy_direct(X_train, y_train, X_test, y_test)
 
-
-
-
-from sklearn.linear_model import LinearRegression
-model = LinearRegression()
-ml.score(model)
 
 print('KNN')
 from sklearn.neighbors import KNeighborsRegressor
@@ -123,9 +117,34 @@ from sklearn.ensemble import RandomForestRegressor
 model=RandomForestRegressor()
 ml.score(model, printTestScore=True)
 
-for i in range(50 , 500, 100):
-    model=RandomForestRegressor(n_estimators=i)
-    print('i:', i, ml.score(model, iprint=0))
+
+#for i in range(50 , 500, 100):
+#    model=RandomForestRegressor(n_estimators=i)
+#    print('i:', i, ml.score(model, iprint=0))
+
+
+print('Linear, ridge and kernel ridge')
+
+from sklearn.linear_model import LinearRegression
+model = LinearRegression()
+ml.score(model)
+print(model.coef_)
+
+
+from sklearn.linear_model import Ridge
+
+import numpy as np
+alpha = np.linspace(0.01, 8, 10)
+for i in alpha:
+    model = Ridge(alpha=i)
+    print('alpha, score:', i, ml.score(model, iprint=0))
+
+
+print('- linear kernel')
+from sklearn.kernel_ridge import KernelRidge
+model=KernelRidge()
+ml.score(model)
+
     
     
 print('------------')
