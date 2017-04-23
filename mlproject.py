@@ -30,6 +30,15 @@ class mlproject(object):
     def getData(self, path, delimiter=',', header='infer'):
         df = pd.read_csv(path, delimiter=delimiter, header=header)
         self.df = df
+
+    def dropColumn(self, column):
+        self.df = self.df.drop(column, 1)
+        
+    def normalize(self):
+        self.means = self.df.mean()
+        self.ranges = (self.df.max() - self.df.min()) 
+        self.df =  (self.df - self.df.mean()) / (self.df.max() - self.df.min())
+
         
     def missingValues(self):       
         """
