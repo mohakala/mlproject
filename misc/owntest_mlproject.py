@@ -61,7 +61,7 @@ ml.modifyData(addFeat)
 # Shorten the column name of the solubilities: --> sol and sol_pred
 columns = {'measured log(solubility:mol/L)': 'sol', 'ESOL predicted log(solubility:mol/L)': 'sol_pred'}
 ml.rename(columns)
-ml.head()
+ml.head(3)
 # ml.plot(ml.df['n_c'], ml.df['sol'])
 
 # print(ml.df.corr('pearson'))
@@ -96,14 +96,23 @@ ml.set_xy_direct(X_train, y_train, X_test, y_test)
 
 print('*KNN')
 from sklearn.neighbors import KNeighborsRegressor
+
+# Select hyperparameters for KNN
+weights = 'uniform'     #  'uniform' or 'distance'
+if(False):
+    for n in range(1, 12):
+        model = KNeighborsRegressor(n_neighbors=n, weights=weights)
+        print('param, score:', n, ml.score(model, iprint=0))
 weights = 'uniform'     #  'uniform' or 'distance'
 n_neighbors = 6
 model = KNeighborsRegressor(n_neighbors, weights=weights)
-ml.score(model)
+ml.score(model, printTestScore=True)
+
 
 from sklearn.ensemble import BaggingRegressor
-model = BaggingRegressor(KNeighborsRegressor(n_neighbors = 6), n_estimators=10, max_samples=1.0)
-ml.score(model)
+model = BaggingRegressor(KNeighborsRegressor(n_neighbors = 6, weights='uniform'),  \
+                         n_estimators=20, max_samples=1.0)
+ml.score(model, printTestScore=True)
 
 
 print('*Decision tree')
@@ -145,7 +154,7 @@ if(False):
     for alpha in np.linspace(0.01, 3, 30):
         model = Ridge(alpha=alpha)
         print('alpha, score:', alpha, ml.score(model, iprint=0))
-print('--> selected alpha, but no improvement = ', 0.3, ':')
+print('**ridge: selected alpha, but no improvement = ', 0.3, ':')
 alpha = 0.3
 model = Ridge(alpha=alpha)
 ml.score(model)
@@ -158,7 +167,7 @@ if(False):
     for alpha in np.linspace(0.0001, 0.1, 40):
         model = Lasso(alpha=alpha)
         print('alpha, score:', alpha, ml.score(model, iprint=0))
-print('--> alpha very small, so no improvement. Use = 0.0001:')
+print('**lasso: alpha very small, so no improvement. Use = 0.0001:')
 alpha=0.0001
 model = Lasso(alpha=alpha)
 ml.score(model)
@@ -167,13 +176,35 @@ ml.score(model)
 
 
 
-print('- linear kernel')
+print('**linear kernel')
 from sklearn.kernel_ridge import KernelRidge
-model=KernelRidge()
+model=KernelRidge(alpha=0.3)
 ml.score(model)
 
+
+# http://scikit-learn.org/stable/modules/generated/sklearn.kernel_ridge.KernelRidge.html#sklearn.kernel_ridge.KernelRidge
+kernel='rbf'
+from sklearn.kernel_ridge import KernelRidge
+
+
+# Grid search for alpha and gamma hyperparameters
+# Note, in KRR kernel: alpha = (2*C)^-1  
+if(False):
+    C_range = np.logspace(-2, 7, 10)
+    alpha_range = 1.0 / (2*C_range)
+    gamma_range = np.logspace(-7, 2, 10)
+    # gamma_range = np.linspace(1, 30, 30)
+    for gamma in gamma_range:
+        for alpha in alpha_range: 
+            model = KernelRidge(kernel=kernel, gamma=gamma, alpha=alpha)
+            print('alpha, gamma, score:', alpha, gamma, ml.score(model, iprint=0))
+
+print('**rbf: select alpha=0.05, gamma = 1:')
+model = KernelRidge(kernel=kernel, gamma=1.0, alpha=0.05)
+ml.score(model, iprint=4)    
     
-    
+
+
 print('------------')
 print('Done')
 

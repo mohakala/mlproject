@@ -150,7 +150,7 @@ class mlproject(object):
             valscore  = np.round(self.score_val, 3)
             print('Validation score (R2):\t\t\t', valscore )
 
-        if (self.isTest and printTestScore):
+        if (self.isTest and printTestScore) or (self.isTest and iprint > 3):
             print('Test score:\t', self.score_test)
             
 
