@@ -19,8 +19,12 @@ class mlproject(object):
     Uses pandas dataframes
     """
     
-    def __init__(self):
-        pass
+    def __init__(self, df=None):
+        """
+        Use input pandas dataframe if exists
+        """
+        if df is not None:
+            self.df = df
     
     def debug(self, value=False):
         self.debug=value
@@ -53,23 +57,36 @@ class mlproject(object):
         """
         self.df[label].fillna(self.df[label].value_counts().index[0], inplace=True)
 
-    def plot(self, x, y):
+    def plot(self, x, y=None):
         plt.figure()
-        plt.scatter(x, y)        
+        if y is None:
+            plt.plot(x)
+        else:
+            plt.scatter(x, y)        
         #plt.axis('tight')
         #plt.ylabel('R2')
         #plt.xlabel('neighbors')
         #plt.legend()
         plt.show()
 
-    def plot_new(self, i, j, xlabel=" ", ylabel=" "):
+    def plot_new(self, i, j=None, xlabel=" ", ylabel=" "):
         plt.figure()
-        plt.plot(self.df[i], self.df[j], 'o')        
+        if j is None:
+            plt.plot(self.df[i], 'o')
+        else:
+            plt.plot(self.df[i], self.df[j], 'o')        
         #plt.axis('tight')
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         #plt.xlabel('neighbors')
         #plt.legend()
+        plt.show()
+
+    def plot_date(self, i, j, xlabel=" ", ylabel=" "):
+        plt.figure()
+        plt.plot_date(self.df[i], self.df[j])
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
         plt.show()
 
     def addHeader(self, header):
