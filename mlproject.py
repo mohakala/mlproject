@@ -36,6 +36,9 @@ class mlproject(object):
         self.df = df
 
     def dropColumn(self, column):
+        """
+        Drops a column from the pandas dataframe
+        """
         self.df = self.df.drop(column, 1)
         
     def normalize(self):
@@ -43,7 +46,6 @@ class mlproject(object):
         self.ranges = (self.df.max() - self.df.min()) 
         self.df =  (self.df - self.df.mean()) / (self.df.max() - self.df.min())
 
-        
     def missingValues(self):       
         """
         Report missing values
@@ -257,6 +259,7 @@ class mlproject(object):
             self.ytrain = self.y[:len(self.y)]
             self.size_sets.append(len(self.ytrain))
         else:
+            # We have more than just training data
             self.Xtrain = self.X[:ind[0], :]
             self.ytrain = self.y[:ind[0]]
             self.size_sets.append(len(self.ytrain))
