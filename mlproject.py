@@ -59,24 +59,31 @@ class mlproject(object):
         """
         self.df[label].fillna(self.df[label].value_counts().index[0], inplace=True)
 
-    def plot(self, x, y=None):
+    def plot(self, x, y=None, x2=None, y2=None):
+        """ 
+        Quick plot of one or two sets of data
+        """
         plt.figure()
         if y is None:
             plt.plot(x)
         else:
-            plt.scatter(x, y)        
+            plt.plot(x, y)        
+            if x2 is not None:
+                plt.plot(x2, y2)
+
         #plt.axis('tight')
         #plt.ylabel('R2')
         #plt.xlabel('neighbors')
         #plt.legend()
         plt.show()
 
-    def plot_new(self, i, j=None, xlabel=" ", ylabel=" "):
+    def plot_new(self, i, j=None, k=None, l=None, xlabel=" ", ylabel=" "):
         plt.figure()
         if j is None:
             plt.plot(self.df[i], 'o')
         else:
-            plt.plot(self.df[i], self.df[j], 'o')        
+            plt.plot(self.df[i], self.df[j], 'o')
+                
         #plt.axis('tight')
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
