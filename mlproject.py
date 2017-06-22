@@ -53,12 +53,24 @@ class mlproject(object):
         self.missingvalues=self.df.apply(lambda x: sum(x.isnull()),axis=0)
         return self.missingvalues
 
-    def fillMissingCategorical(self, label):
-        """
-        Fill missing values of column 'label' with average value
-        """
-        self.df[label].fillna(self.df[label].value_counts().index[0], inplace=True)
+    def fillMissingCategorical(self, label, method='average'):
+        if(method == 'average'):
+            self.fillMissingCategoricalAverage(label)
+        elif(method == 'random'):
+            self.fillMissingCategoricalRandom(label)
+        else:
+            assert False, 'method for filling n/a:s not recognized'
 
+    def fillMissingCategoricalAverage(self, label):
+        self.df[label].fillna(self.df[label].value_counts().index[0], inplace=True)
+        
+    def fillMissingCategoricalRandom(self, label):
+        n_missing = sum( self.df[label].isnull() )
+        list_to_fill = self.df[self.df[label].notnull()][label].sample(n=n_missing, random_state=0)
+        print('Filling with these values:', list_to_fill)
+        print('NaN before filling:', self.df.loc[self.df[label].isnull(), label])
+        self.df.loc[self.df[label].isnull(), label] = list_to_fill.values
+        
     def plot(self, x, y=None, x2=None, y2=None):
         """ 
         Quick plot of one or two sets of data
