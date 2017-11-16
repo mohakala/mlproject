@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Data exploratin and machine learning
+Data exploration and machine learning
 Created on Sun Apr  2 09:41:42 2017
 @author: mikko hakala
 """
